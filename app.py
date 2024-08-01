@@ -1,7 +1,28 @@
 from flask import Flask, request, Response, jsonify
 import requests
+import stem.process
+import stem.util.log
+import time
+
+stem.util.log.get_logger().setLevel(stem.util.log.DEBUG)
 
 app = Flask(__name__)
+
+def print_bootstrap_lines(line):
+    if "Bootstrapped " in line:
+        print(line)
+
+def start_tor():
+    start = stem.process.launch_tor_with_config(
+        config = {
+            'SocksPort': '6000',
+            'ExitNodes': '{US}',
+        },
+        init_msg_handler = print_bootstrap_lines,
+    )
+    return start
+
+tor_process = start_tor()
 
 @app.route('/fetch', methods=['POST'])
 def proxy():
@@ -19,8 +40,8 @@ def proxy():
     # Forward the request
     try:
         proxies = dict(
-            http='socks5h://host:port',
-            https='socks5h://host:port'
+            http=f'socks5h://127.0.0.1:6000',
+            https=f'socks5h://127.0.0.1:6000'
         )
         resp = requests.request(
             method=method,
@@ -44,4 +65,7 @@ def proxy():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    try:
+        app.run(debug=True)
+    finally:
+        tor_process.kill()  # stops tor when the app is terminated
