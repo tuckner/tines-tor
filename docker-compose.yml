@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   proxy:
-    image: tines-tor
+    image: onions
     environment:
       OPENAPI_MOCK_SPECIFICATION_URL: 'https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml'
   tunnel:
