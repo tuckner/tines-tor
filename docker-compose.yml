@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  proxy:
+    image: tines-tor
+    environment:
+      OPENAPI_MOCK_SPECIFICATION_URL: 'https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml'
+  tunnel:
+    image: tines/tines-tunnel:latest
+    environment:
+      - TINES_TUNNEL_SECRET=${TINES_TUNNEL_SECRET}
