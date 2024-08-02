@@ -1,28 +1,9 @@
 from flask import Flask, request, Response, jsonify
 import requests
-import stem.process
-import stem.util.log
-import time
-
-stem.util.log.get_logger().setLevel(stem.util.log.DEBUG)
+import socket
+import logging
 
 app = Flask(__name__)
-
-def print_bootstrap_lines(line):
-    if "Bootstrapped " in line:
-        print(line)
-
-def start_tor():
-    start = stem.process.launch_tor_with_config(
-        config = {
-            'SocksPort': '6000',
-            'ExitNodes': '{US}',
-        },
-        init_msg_handler = print_bootstrap_lines,
-    )
-    return start
-
-tor_process = start_tor()
 
 @app.route('/fetch', methods=['POST'])
 def proxy():
@@ -39,10 +20,19 @@ def proxy():
 
     # Forward the request
     try:
+        # Resolve the DNS for tines-tor-proxy
+        try:
+            resolved_ip = socket.gethostbyname('tines-tor-proxy')
+        except socket.gaierror:
+            resolved_ip = '127.0.0.1'
+        logging.info(f"Resolved IP: {resolved_ip}")
         proxies = dict(
-            http=f'socks5h://127.0.0.1:6000',
-            https=f'socks5h://127.0.0.1:6000'
+            http=f'socks5h://{resolved_ip}:6000',
+            https=f'socks5h://{resolved_ip}:6000'
         )
+        # Log the proxy settings
+        logging.info(f"Using proxies: {proxies}")
+
         resp = requests.request(
             method=method,
             url=url,
@@ -51,7 +41,8 @@ def proxy():
             params=data if method == 'GET' else None,
             cookies=request.cookies,
             allow_redirects=False,
-            proxies=proxies
+            proxies=proxies,
+            verify=False
         )
 
         # Create the response object
@@ -62,10 +53,9 @@ def proxy():
         return Response(resp.content, resp.status_code, headers)
     
     except requests.RequestException as e:
+        logging.error(f"RequestException: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    try:
-        app.run(debug=True)
-    finally:
-        tor_process.kill()  # stops tor when the app is terminated
+    logging.basicConfig(level=logging.INFO)
+    app.run(host='0.0.0.0', port=8080, debug=True)

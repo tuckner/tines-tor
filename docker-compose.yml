@@ -1,10 +1,31 @@
 version: "3.9"
 services:
+  server:
+    build: ./server
+    container_name: onion
+    ports:
+      - "8080:8080"
+    networks:
+      - tines-network
+    depends_on:
+      - proxy
+
   proxy:
-    image: onions
-    environment:
-      OPENAPI_MOCK_SPECIFICATION_URL: 'https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml'
+    build: ./proxy
+    container_name: tines-tor-proxy
+    ports:
+      - "6000:6000"
+    networks:
+      - tines-network
+
   tunnel:
     image: tines/tines-tunnel:latest
+    container_name: tines-tunnel
     environment:
       - TINES_TUNNEL_SECRET=${TINES_TUNNEL_SECRET}
+    networks:
+      - tines-network
+
+networks:
+  tines-network:
+    driver: bridge
