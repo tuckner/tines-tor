@@ -2,18 +2,18 @@
 
 Proof of concept to connect to Tor resources via Tines.
 
-# Requirements
+## Requirements
 - Docker
 - Docker Compose
 - Tines Tunnel (or run an open SOCKS proxy)
 
-# Run service
+## Run service
 
 ```
 docker compose up -d
 ```
 
-# Configure Tines
+## Configure Tines
 
 The server is available at `http://onion:8080/fetch`. It will pass along the request payload to the Tor proxy. Use parameters like URL, headers, method, etc to modify the request.
 
